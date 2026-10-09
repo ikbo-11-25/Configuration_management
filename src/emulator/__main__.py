@@ -1,17 +1,24 @@
 """Launch the graphical shell emulator."""
 
+import sys
 import tkinter as tk
 
 from emulator.config import parse_config
 from emulator.gui import Terminal
 from emulator.shell import Shell
 from emulator.startup import run_script
+from emulator.vfs import VFS, VFSError
 
 
 def main(argv: list[str] | None = None) -> int:
     """Run the configured script in the GUI or diagnostic mode."""
     config = parse_config(argv)
-    shell = Shell(config)
+    try:
+        vfs = VFS.from_directory(config.vfs)
+    except VFSError as error:
+        print(f"VFS: {error}", file=sys.stderr)
+        return 1
+    shell = Shell(config, vfs)
     if config.headless:
         print(config.dump())
         status = run_script(shell, config.startup, print)

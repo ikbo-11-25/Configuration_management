@@ -1,0 +1,9 @@
+# Commands available at stage 3: ls/cd still show their arguments.
+conf-dump
+ls
+ls -a
+ls docs
+cd docs
+cd ..
+conf-dump unexpected
+ls THIS_LINE_MUST_NOT_RUN

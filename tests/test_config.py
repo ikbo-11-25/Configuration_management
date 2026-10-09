@@ -1,6 +1,5 @@
 """Configuration and startup-script regression tests."""
 
-import tempfile
 import unittest
 from contextlib import redirect_stderr
 from io import StringIO
@@ -9,6 +8,7 @@ from pathlib import Path
 from emulator.config import Config, parse_config
 from emulator.shell import Shell
 from emulator.startup import run_script
+from support import temporary_directory
 
 
 class ConfigTests(unittest.TestCase):
@@ -42,7 +42,7 @@ class StartupTests(unittest.TestCase):
 
     def run_text(self, text):
         """Run a temporary script and return status and transcript."""
-        with tempfile.TemporaryDirectory() as directory:
+        with temporary_directory() as directory:
             script = Path(directory) / "script.txt"
             script.write_text(text, encoding="utf-8-sig")
             lines = []

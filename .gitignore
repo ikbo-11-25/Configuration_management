@@ -9,5 +9,6 @@ build/
 *.egg-info/
 .idea/
 .vscode/
+.test-work/
 *.pdf
 *.zip

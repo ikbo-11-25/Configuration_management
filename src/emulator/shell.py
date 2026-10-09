@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from emulator.config import Config
 from emulator.parser import parse_command
+from emulator.vfs import VFS
 
 
 @dataclass(frozen=True)
@@ -18,10 +19,12 @@ class Result:
 class Shell:
     """Execute emulator commands without invoking the host shell."""
 
-    def __init__(self, config: Config | None = None) -> None:
+    def __init__(self, config: Config | None = None,
+                 vfs: VFS | None = None) -> None:
         """Register commands implemented at this development stage."""
         self.cwd = "/"
         self.config = config or Config()
+        self.vfs = vfs or VFS()
         self.handlers = {
             "ls": self.stub, "cd": self.stub,
             "conf-dump": self.conf_dump,
