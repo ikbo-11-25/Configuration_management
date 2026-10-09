@@ -1,5 +1,5 @@
 # Configuration and both original commands.
 conf-dump
-ls /home
-cd /home
+ls /
+cd /
 exit

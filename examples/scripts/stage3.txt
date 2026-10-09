@@ -1,4 +1,4 @@
-# Commands available at stage 3: ls/cd still show their arguments.
+# Test VFS and earlier commands; the first error stops the script.
 conf-dump
 ls
 ls -a

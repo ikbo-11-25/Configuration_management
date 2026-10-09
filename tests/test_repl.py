@@ -31,9 +31,10 @@ class ReplTests(unittest.TestCase):
         self.assertTrue(Shell().execute("exit").exit_requested)
         self.assertTrue(Shell().execute("exit extra").error)
 
-    def test_stubs(self):
-        """Prototype commands display their name and arguments."""
-        self.assertEqual(Shell().execute("ls /a").output, "ls: ['/a']")
+    def test_empty_vfs(self):
+        """An empty memory VFS still supports ls and cd."""
+        self.assertEqual(Shell().execute("ls").output, "")
+        self.assertFalse(Shell().execute("cd /").error)
 
 
 if __name__ == "__main__":

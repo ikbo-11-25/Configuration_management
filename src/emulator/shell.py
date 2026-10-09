@@ -1,10 +1,13 @@
 """Command dispatch and shell state."""
 
 from dataclasses import dataclass
+from datetime import datetime
 
+from emulator.commands import CoreCommands
 from emulator.config import Config
+from emulator.options import CommandError
 from emulator.parser import parse_command
-from emulator.vfs import VFS
+from emulator.vfs import VFS, VFSError
 
 
 @dataclass(frozen=True)
@@ -23,12 +26,14 @@ class Shell:
                  vfs: VFS | None = None) -> None:
         """Register commands implemented at this development stage."""
         self.cwd = "/"
+        self.previous_cwd = "/"
+        self.started = datetime.now()
         self.config = config or Config()
         self.vfs = vfs or VFS()
-        self.handlers = {
-            "ls": self.stub, "cd": self.stub,
-            "conf-dump": self.conf_dump,
-        }
+        core = CoreCommands(self)
+        self.handlers = {"ls": core.ls, "cd": core.cd,
+                         "cal": core.cal, "who": core.who,
+                         "conf-dump": self.conf_dump}
 
     @property
     def prompt(self) -> str:
@@ -48,14 +53,13 @@ class Shell:
         handler = self.handlers.get(command)
         if handler is None:
             return Result(f"{command}: command not found", True)
-        return handler(command, args)
+        try:
+            return Result(handler(args))
+        except (CommandError, VFSError) as error:
+            return Result(f"{command}: {error}", True)
 
-    def stub(self, command: str, args: list[str]) -> Result:
-        """Show the command and arguments in the REPL prototype."""
-        return Result(f"{command}: {args!r}")
-
-    def conf_dump(self, command: str, args: list[str]) -> Result:
+    def conf_dump(self, args: list[str]) -> str:
         """Print configured paths and interface settings."""
         if args:
-            return Result(f"{command}: arguments are not supported", True)
-        return Result(self.config.dump())
+            raise CommandError("arguments are not supported")
+        return self.config.dump()

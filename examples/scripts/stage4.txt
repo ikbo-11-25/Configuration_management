@@ -1,0 +1,22 @@
+conf-dump
+ls
+ls -a
+ls -l
+ls -al docs hello.txt
+ls -- hello.txt
+cd docs
+cd ./course/tasks
+ls -la
+cd ../../..
+cd -
+cd /
+cd
+cal
+cal 2 2024
+cal 2026
+cal -y
+cal -y 2026
+who
+# Deliberate error. The following line must not execute.
+cd /missing
+who
