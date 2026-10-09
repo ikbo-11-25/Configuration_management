@@ -1,0 +1,3 @@
+conf-dump
+conf-dump unexpected
+ls THIS_LINE_MUST_NOT_RUN

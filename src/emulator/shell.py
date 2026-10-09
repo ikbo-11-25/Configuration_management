@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from emulator.config import Config
 from emulator.parser import parse_command
 
 
@@ -17,10 +18,14 @@ class Result:
 class Shell:
     """Execute emulator commands without invoking the host shell."""
 
-    def __init__(self) -> None:
+    def __init__(self, config: Config | None = None) -> None:
         """Register commands implemented at this development stage."""
         self.cwd = "/"
-        self.handlers = {"ls": self.stub, "cd": self.stub}
+        self.config = config or Config()
+        self.handlers = {
+            "ls": self.stub, "cd": self.stub,
+            "conf-dump": self.conf_dump,
+        }
 
     @property
     def prompt(self) -> str:
@@ -45,3 +50,9 @@ class Shell:
     def stub(self, command: str, args: list[str]) -> Result:
         """Show the command and arguments in the REPL prototype."""
         return Result(f"{command}: {args!r}")
+
+    def conf_dump(self, command: str, args: list[str]) -> Result:
+        """Print configured paths and interface settings."""
+        if args:
+            return Result(f"{command}: arguments are not supported", True)
+        return Result(self.config.dump())
