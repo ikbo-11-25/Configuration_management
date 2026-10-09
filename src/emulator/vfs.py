@@ -11,6 +11,10 @@ class VFSError(ValueError):
     """A virtual path or physical VFS source is invalid."""
 
 
+class MissingPath(VFSError):
+    """A virtual file or directory does not exist."""
+
+
 @dataclass
 class Node:
     """A directory or file, including emulated ownership metadata."""
@@ -56,7 +60,9 @@ class VFS:
                 for path in sorted(physical.iterdir()):
                     check_source(path)
                     node = Node(path.name, path.is_dir())
-                    node.modified = datetime.fromtimestamp(path.stat().st_mtime)
+                    node.modified = datetime.fromtimestamp(
+                        path.stat().st_mtime,
+                    )
                     parent.children[path.name] = node
                     if node.is_dir:
                         pending.append((path, node))
@@ -76,19 +82,22 @@ class VFS:
         for part in path.split("/"):
             if not part:
                 continue
-            if not node.is_dir:
-                raise VFSError(f"not a directory: /{'/'.join(parts)}")
-            if part == ".":
-                continue
-            if part == "..":
-                parts = parts[:-1]
-                node = self._lookup(parts)
-            else:
-                parts.append(part)
-                node = self._lookup(parts)
+            parts, node = self._step(parts, node, part)
         if path.endswith("/") and not node.is_dir:
             raise VFSError(f"not a directory: {path}")
         return "/" + "/".join(parts), node
+
+    def _step(self, parts: list[str], node: Node, part: str):
+        """Advance one path segment, enforcing directory traversal."""
+        if not node.is_dir:
+            raise VFSError(f"not a directory: /{'/'.join(parts)}")
+        if part == ".":
+            return parts, node
+        if part == "..":
+            parts = parts[:-1]
+        else:
+            parts = parts + [part]
+        return parts, self._lookup(parts)
 
     def _lookup(self, parts: list[str]) -> Node:
         """Find a node using canonical path components."""
@@ -97,7 +106,8 @@ class VFS:
             if not node.is_dir:
                 raise VFSError(f"not a directory: {part}")
             if part not in node.children:
-                raise VFSError(f"no such file or directory: /{'/'.join(parts)}")
+                joined = "/" + "/".join(parts)
+                raise MissingPath(f"no such file or directory: {joined}")
             node = node.children[part]
         return node
 

@@ -1,0 +1,21 @@
+conf-dump
+ls -la
+chown alice hello.txt
+ls -l hello.txt
+chown bob:staff hello.txt .hidden
+ls -la
+chown -R student:course docs
+ls -l docs/course/tasks
+chown -- student tmp
+rm tmp/cache.txt
+ls tmp
+rm -r tmp
+rm -f /missing
+rm -rf /missing
+rm -- .hidden
+ls -la
+rm -R docs
+ls
+# Directory removal without -r must fail, even when -f is set.
+rm -f /
+who

@@ -1,0 +1,15 @@
+# Successful end-to-end demonstration. All mutations are in memory.
+conf-dump
+ls -al
+cd docs/course/tasks
+ls -l
+cd /
+cal 2 2024
+who
+chown -R student:course docs
+ls -l docs/course/tasks
+rm tmp/cache.txt
+rm -r tmp
+rm -f /absent
+ls -l
+exit

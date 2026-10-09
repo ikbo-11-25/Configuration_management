@@ -7,12 +7,20 @@ from datetime import date
 
 from emulator.options import CommandError, parse_flags
 
-MAX_CD_OPERANDS = 1
+SINGLE_OPERAND = 1
 MAX_CAL_OPERANDS = 2
 MIN_YEAR = 1
 MAX_YEAR = 9999
 MIN_MONTH = 1
 MAX_MONTH = 12
+
+
+def parse_numbers(values):
+    """Convert calendar operands to integers with a readable error."""
+    try:
+        return [int(value) for value in values]
+    except ValueError as error:
+        raise CommandError("month and year must be integers") from error
 
 
 def long_entry(name, node) -> str:
@@ -46,7 +54,7 @@ class CoreCommands:
                 else:
                     suffix = "/" if entry.is_dir else ""
                     lines.append(name + suffix)
-            heading = f"{path}:\n" if len(paths) > MAX_CD_OPERANDS else ""
+            heading = f"{path}:\n" if len(paths) > SINGLE_OPERAND else ""
             blocks.append(heading + "\n".join(lines))
         return "\n\n".join(blocks)
 
@@ -65,7 +73,7 @@ class CoreCommands:
     def cd(self, args: list[str]) -> str:
         """Change directory; no operand selects / and - selects previous."""
         _, paths = parse_flags(args, "")
-        if len(paths) > MAX_CD_OPERANDS:
+        if len(paths) > SINGLE_OPERAND:
             raise CommandError("expected at most one directory")
         path = paths[0] if paths else "/"
         show_path = path == "-"
@@ -83,24 +91,27 @@ class CoreCommands:
         flags, values = parse_flags(args, "y")
         if len(values) > MAX_CAL_OPERANDS:
             raise CommandError("usage: cal [[month] year] | cal -y [year]")
-        try:
-            numbers = [int(value) for value in values]
-        except ValueError as error:
-            raise CommandError("month and year must be integers") from error
+        year, month = self.calendar_date(flags, values)
+        renderer = calendar.TextCalendar(firstweekday=calendar.SUNDAY)
+        if month is None:
+            return renderer.formatyear(year).rstrip()
+        return renderer.formatmonth(year, month).rstrip()
+
+    def calendar_date(self, flags, values):
+        """Validate calendar operands and choose month or whole-year mode."""
+        numbers = parse_numbers(values)
         today = date.today()
-        whole_year = "y" in flags or len(numbers) == MAX_CD_OPERANDS
-        if "y" in flags and len(numbers) > MAX_CD_OPERANDS:
+        if "y" in flags and len(numbers) > SINGLE_OPERAND:
             raise CommandError("usage: cal -y [year]")
         year = numbers[-1] if numbers else today.year
         if not MIN_YEAR <= year <= MAX_YEAR:
             raise CommandError(f"year must be {MIN_YEAR}..{MAX_YEAR}")
-        renderer = calendar.TextCalendar(firstweekday=calendar.SUNDAY)
-        if whole_year:
-            return renderer.formatyear(year).rstrip()
+        if "y" in flags or len(numbers) == SINGLE_OPERAND:
+            return year, None
         month = numbers[0] if numbers else today.month
         if not MIN_MONTH <= month <= MAX_MONTH:
             raise CommandError(f"month must be {MIN_MONTH}..{MAX_MONTH}")
-        return renderer.formatmonth(year, month).rstrip()
+        return year, month
 
     def who(self, args: list[str]) -> str:
         """Show the current emulator session using real host identity."""

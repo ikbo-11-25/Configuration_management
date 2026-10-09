@@ -5,6 +5,7 @@ from datetime import datetime
 
 from emulator.commands import CoreCommands
 from emulator.config import Config
+from emulator.mutations import MutationCommands
 from emulator.options import CommandError
 from emulator.parser import parse_command
 from emulator.vfs import VFS, VFSError
@@ -31,8 +32,10 @@ class Shell:
         self.config = config or Config()
         self.vfs = vfs or VFS()
         core = CoreCommands(self)
+        mutations = MutationCommands(self)
         self.handlers = {"ls": core.ls, "cd": core.cd,
                          "cal": core.cal, "who": core.who,
+                         "rm": mutations.rm, "chown": mutations.chown,
                          "conf-dump": self.conf_dump}
 
     @property

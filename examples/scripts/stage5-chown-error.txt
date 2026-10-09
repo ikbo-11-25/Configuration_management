@@ -1,0 +1,3 @@
+ls -l
+chown user: hello.txt
+ls THIS_LINE_MUST_NOT_RUN
