@@ -11,13 +11,14 @@ from emulator.vfs import MissingPath, Node, VFS
 class MutationTests(unittest.TestCase):
     """Use a fresh snapshot for each mutation test."""
 
-    def setUp(self):
+    def prepare_fixture(self):
         """Load physical example files without changing them."""
         self.source = PROJECT_ROOT / "examples" / "vfs" / "deep"
         self.shell = Shell(vfs=VFS.from_directory(self.source))
 
     def test_rm_file(self):
         """A removed virtual file disappears only from memory."""
+        self.prepare_fixture()
         self.assertFalse(self.shell.execute("rm hello.txt").error)
         with self.assertRaises(MissingPath):
             self.shell.vfs.get("hello.txt")
@@ -25,6 +26,7 @@ class MutationTests(unittest.TestCase):
 
     def test_rm_recursive(self):
         """Both recursive flags delete directory trees."""
+        self.prepare_fixture()
         self.assertTrue(self.shell.execute("rm docs").error)
         self.assertFalse(self.shell.execute("rm -r docs").error)
         self.assertFalse(self.shell.execute("rm -R tmp").error)
@@ -32,6 +34,7 @@ class MutationTests(unittest.TestCase):
 
     def test_rm_force(self):
         """Force ignores missing operands but not invalid options/types."""
+        self.prepare_fixture()
         for line in ("rm -f absent", "rm -rf absent", "rm -f"):
             self.assertFalse(self.shell.execute(line).error)
         for line in ("rm absent", "rm", "rm -f docs", "rm -z hello.txt"):
@@ -39,6 +42,7 @@ class MutationTests(unittest.TestCase):
 
     def test_rm_protected_paths(self):
         """Root, dot, parent, and current ancestors are protected."""
+        self.prepare_fixture()
         self.shell.execute("cd /docs/course/tasks")
         paths = ("/", ".", "..", "/docs", "/docs/course/tasks")
         for path in paths:
@@ -48,6 +52,7 @@ class MutationTests(unittest.TestCase):
 
     def test_rm_multiple_and_double_dash(self):
         """Multiple paths and names beginning with - can be removed."""
+        self.prepare_fixture()
         self.shell.vfs.root.children["-file"] = Node("-file", False)
         self.assertFalse(self.shell.execute("rm -- -file .hidden").error)
         self.assertFalse(self.shell.execute("rm hello.txt tmp/cache.txt").error)
@@ -55,6 +60,7 @@ class MutationTests(unittest.TestCase):
 
     def test_chown_owner_and_group(self):
         """An owner-only change preserves the group."""
+        self.prepare_fixture()
         node = self.shell.vfs.get("hello.txt")[1]
         self.shell.execute("chown alice hello.txt")
         self.assertEqual((node.owner, node.group), ("alice", "users"))
@@ -64,6 +70,7 @@ class MutationTests(unittest.TestCase):
 
     def test_chown_recursive(self):
         """Recursive ownership updates every file and directory."""
+        self.prepare_fixture()
         self.shell.execute("chown -R student:course docs")
         docs = self.shell.vfs.get("docs")[1]
         for node in self.shell.vfs.walk(docs):
@@ -73,6 +80,7 @@ class MutationTests(unittest.TestCase):
 
     def test_chown_nonrecursive(self):
         """Changing a directory alone leaves descendants intact."""
+        self.prepare_fixture()
         descendant = self.shell.vfs.get("docs/readme.txt")[1]
         original = descendant.owner
         self.shell.execute("chown other docs")
@@ -81,6 +89,7 @@ class MutationTests(unittest.TestCase):
 
     def test_chown_errors(self):
         """Malformed identities, paths, flags, and arity are rejected."""
+        self.prepare_fixture()
         lines = ("chown", "chown alice", "chown alice absent",
                  "chown user: hello.txt", "chown :group hello.txt",
                  "chown a:b:c hello.txt", "chown -z alice hello.txt")
@@ -93,6 +102,8 @@ class MutationTests(unittest.TestCase):
 
     def test_physical_tree_unchanged(self):
         """Data, directories, timestamps, and host ownership stay intact."""
+        self.prepare_fixture()
+
         def snapshot():
             """Record source structure, bytes, and physical metadata."""
             items = {}

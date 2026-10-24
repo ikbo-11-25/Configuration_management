@@ -12,13 +12,14 @@ from emulator.vfs import VFS
 class CommandTests(unittest.TestCase):
     """Check supported command modes and errors."""
 
-    def setUp(self):
+    def prepare_fixture(self):
         """Load a fresh VFS for every test."""
         source = PROJECT_ROOT / "examples" / "vfs" / "deep"
         self.shell = Shell(vfs=VFS.from_directory(source))
 
     def test_ls_modes(self):
         """Hidden files, details, and multiple operands work."""
+        self.prepare_fixture()
         self.assertNotIn(".hidden", self.shell.execute("ls").output)
         self.assertIn(".hidden", self.shell.execute("ls -a").output)
         detailed = self.shell.execute("ls -al").output
@@ -30,12 +31,14 @@ class CommandTests(unittest.TestCase):
 
     def test_ls_errors(self):
         """Unsupported flags and nonexistent paths are errors."""
+        self.prepare_fixture()
         for line in ("ls missing", "ls -z", "ls hello.txt/"):
             with self.subTest(line=line):
                 self.assertTrue(self.shell.execute(line).error)
 
     def test_cd_modes(self):
         """Relative paths, root defaults, and previous directory work."""
+        self.prepare_fixture()
         self.assertFalse(self.shell.execute("cd /docs/course/tasks").error)
         self.assertEqual(self.shell.cwd, "/docs/course/tasks")
         self.shell.execute("cd ../..")
@@ -49,6 +52,7 @@ class CommandTests(unittest.TestCase):
 
     def test_cd_errors_preserve_cwd(self):
         """An invalid cd does not change directory state."""
+        self.prepare_fixture()
         self.shell.execute("cd docs")
         for line in ("cd missing", "cd /hello.txt", "cd / /docs"):
             with self.subTest(line=line):
@@ -57,6 +61,7 @@ class CommandTests(unittest.TestCase):
 
     def test_cal_leap_year(self):
         """February 2024 includes the leap day and Sunday-first header."""
+        self.prepare_fixture()
         output = self.shell.execute("cal 2 2024").output
         self.assertIn("February 2024", output)
         self.assertIn("29", output)
@@ -64,6 +69,7 @@ class CommandTests(unittest.TestCase):
 
     def test_cal_year_and_current(self):
         """Year, -y, and the current month are supported."""
+        self.prepare_fixture()
         for line in ("cal 2026", "cal -y 2026"):
             output = self.shell.execute(line).output
             self.assertIn("January", output)
@@ -73,6 +79,7 @@ class CommandTests(unittest.TestCase):
 
     def test_cal_errors(self):
         """Invalid numbers, bounds, flags, and arity produce errors."""
+        self.prepare_fixture()
         lines = ("cal 13 2026", "cal 0 2026", "cal x", "cal 0",
                  "cal 10000", "cal 1 2 3", "cal -y 2 2026", "cal -z")
         for line in lines:
@@ -81,6 +88,7 @@ class CommandTests(unittest.TestCase):
 
     def test_who(self):
         """Who exposes real host identity for the current session."""
+        self.prepare_fixture()
         output = self.shell.execute("who").output
         self.assertIn(getpass.getuser(), output)
         self.assertIn(socket.gethostname(), output)
